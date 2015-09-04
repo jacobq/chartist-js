@@ -27,11 +27,25 @@
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
     this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
-    this.range = {
-      min: this.bounds.min,
-      max: this.bounds.max
-    };
-
+    
+    var scale = options.scale || 'linear'; 
+    var match = scale.match(/^([a-z]+)(\d+)?$/);
+    this.scale = {
+      type : match[1],
+      base : Number(match[2])
+    }
+    if (this.scale.type === 'log') {
+      var base = this.scale.base;
+      var minDecade = Math.floor(log(this.bounds.low, base));
+      var maxDecade = Math.ceil(log(this.bounds.high, base));
+      this.bounds.min = Math.pow(base, minDecade);
+      this.bounds.max = Math.pow(base, maxDecade);
+      this.bounds.values = [];
+      for(var decade = minDecade; decade <= maxDecade; ++decade) {
+        this.bounds.values.push(Math.pow(base, decade));
+      }
+    }
+    
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
@@ -39,8 +53,19 @@
       options);
   }
 
+  function log(val, base) {
+    return Math.log(val) / Math.log(base);
+  }
+  
   function projectValue(value) {
-    return this.axisLength * (+Chartist.getMultiValue(value, this.units.pos) - this.bounds.min) / this.bounds.range;
+    var v = +Chartist.getMultiValue(value, this.units.pos);
+    if (this.scale.type === 'log') {
+      var max = this.bounds.max;
+      var min = this.bounds.min;
+      var base = this.scale.base;
+      return this.axisLength / log(max / min, base) * log(v / min, base);
+    }
+    return this.axisLength * (v - this.bounds.min) / this.bounds.range;      
   }
 
   Chartist.AutoScaleAxis = Chartist.Axis.extend({
