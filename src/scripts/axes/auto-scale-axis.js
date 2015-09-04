@@ -14,6 +14,8 @@
  *   onlyInteger: true,
  *   // The reference value can be used to make sure that this value will always be on the chart. This is especially useful on bipolar charts where the bipolar center always needs to be part of the chart.
  *   referenceValue: 5
+ *   // Can be set to 'linear' or 'log'. The base for logarithmic scaling can be defined as 'log2' or 'log10'. Default is 'linear'
+ *   scale: 'linear' 
  * };
  * ```
  *
@@ -32,12 +34,12 @@
     var match = scale.match(/^([a-z]+)(\d+)?$/);
     this.scale = {
       type : match[1],
-      base : Number(match[2])
+      base : Number(match[2]) || 10
     }
     if (this.scale.type === 'log') {
       var base = this.scale.base;
-      var minDecade = Math.floor(log(this.bounds.low, base));
-      var maxDecade = Math.ceil(log(this.bounds.high, base));
+      var minDecade = Math.floor(baseLog(this.bounds.low, base));
+      var maxDecade = Math.ceil(baseLog(this.bounds.high, base));
       this.bounds.min = Math.pow(base, minDecade);
       this.bounds.max = Math.pow(base, maxDecade);
       this.bounds.values = [];
@@ -53,19 +55,19 @@
       options);
   }
 
-  function log(val, base) {
+  function baseLog(val, base) {
     return Math.log(val) / Math.log(base);
   }
   
   function projectValue(value) {
-    var v = +Chartist.getMultiValue(value, this.units.pos);
+    value = +Chartist.getMultiValue(value, this.units.pos);
+    var max = this.bounds.max;
+    var min = this.bounds.min;
     if (this.scale.type === 'log') {
-      var max = this.bounds.max;
-      var min = this.bounds.min;
       var base = this.scale.base;
-      return this.axisLength / log(max / min, base) * log(v / min, base);
+      return this.axisLength / baseLog(max / min, base) * baseLog(value / min, base);
     }
-    return this.axisLength * (v - this.bounds.min) / this.bounds.range;      
+    return this.axisLength * (value - min) / this.bounds.range;      
   }
 
   Chartist.AutoScaleAxis = Chartist.Axis.extend({
