@@ -37,6 +37,8 @@
       base : Number(match[2]) || 10
     }
     if (this.scale.type === 'log') {
+      if (highLow.low * highLow.high <= 0)
+        throw new Error('Negative or zero values are not supported on logarithmic axes.');
       var base = this.scale.base;
       var minDecade = Math.floor(baseLog(this.bounds.low, base));
       var maxDecade = Math.ceil(baseLog(this.bounds.high, base));
