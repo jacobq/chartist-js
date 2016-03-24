@@ -7,7 +7,7 @@
   "homepage": "https://gionkunz.github.io/chartist-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gionkunz/chartist-js.git"
+    "url": "git@github.com:jacobq/chartist-js.git"
   },
   "bugs": {
     "url": "https://github.com/gionkunz/chartist-js/issues"
@@ -42,6 +42,7 @@
   "devDependencies": {
     "assemble": "~0.4.42",
     "assemble-dox": "0.0.2",
+    "es5-shim": "^4.5.7",
     "grunt": "^0.4.5",
     "grunt-concurrent": "^1.0.0",
     "grunt-contrib-clean": "^0.6.0",
@@ -57,7 +58,7 @@
     "grunt-contrib-watch": "^0.6.1",
     "grunt-critical": "0.1.1",
     "grunt-newer": "^1.1.0",
-    "grunt-sass": "^0.18.0",
+    "grunt-sass": "^1.1.0",
     "grunt-svgmin": "~2.0.0",
     "grunt-template": "^0.2.3",
     "grunt-umd": "~2.3.1",
