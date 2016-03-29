@@ -645,6 +645,7 @@ var Chartist = {
       return value[dimension || 'y'] || 0;
     } else {
       return 0;
+
     }
   };
 
