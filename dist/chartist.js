@@ -632,7 +632,7 @@ var Chartist = {
   };
 
   /**
-   * Gets a value from a dimension `value.x` or `value.y` while returning value directly if it's a valid numeric value. If the value is not numeric and it's falsey this function will return undefined.
+   * Gets a value from a dimension `value.x` or `value.y` while returning value directly if it's a valid numeric value. If the value is not numeric and it's falsey this function will return 0.
    *
    * @param value
    * @param dimension
@@ -752,7 +752,7 @@ var Chartist = {
     // step must not be less than EPSILON to create values that can be represented as floating number.
     var EPSILON = 2.221E-16;
     bounds.step = Math.max(bounds.step, EPSILON);
-    
+
     // Narrow min and max based on new step
     newMin = bounds.min;
     newMax = bounds.max;
@@ -767,8 +767,8 @@ var Chartist = {
     bounds.range = bounds.max - bounds.min;
 
     var values = [];
-    for (i = bounds.min; i <= bounds.max; i += bounds.step) {      
-      var value = Chartist.roundWithPrecision(i);      
+    for (i = bounds.min; i <= bounds.max; i += bounds.step) {
+      var value = Chartist.roundWithPrecision(i);
       if (value !== values[values.length - 1]) {
         values.push(i);
       }
@@ -2840,7 +2840,7 @@ var Chartist = {
  *   // The reference value can be used to make sure that this value will always be on the chart. This is especially useful on bipolar charts where the bipolar center always needs to be part of the chart.
  *   referenceValue: 5
  *   // Can be set to 'linear' or 'log'. The base for logarithmic scaling can be defined as 'log2' or 'log10'. Default is 'linear'
- *   scale: 'linear' 
+ *   scale: 'linear'
  * };
  * ```
  *
@@ -2854,13 +2854,13 @@ var Chartist = {
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
     this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
-    
-    var scale = options.scale || 'linear'; 
-    var match = scale.match(/^([a-z]+)(\d+)?$/);
+
+    var scale = options.scale || 'linear';
+    var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
     this.scale = {
       type : match[1],
       base : Number(match[2]) || 10
-    }
+    };
     if (this.scale.type === 'log') {
       if (highLow.low * highLow.high <= 0)
         throw new Error('Negative or zero values are not supported on logarithmic axes.');
@@ -2874,7 +2874,7 @@ var Chartist = {
         this.bounds.values.push(Math.pow(base, decade));
       }
     }
-    
+
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
@@ -2885,7 +2885,7 @@ var Chartist = {
   function baseLog(val, base) {
     return Math.log(val) / Math.log(base);
   }
-  
+
   function projectValue(value) {
     value = +Chartist.getMultiValue(value, this.units.pos);
     var max = this.bounds.max;
@@ -2894,7 +2894,7 @@ var Chartist = {
       var base = this.scale.base;
       return this.axisLength / baseLog(max / min, base) * baseLog(value / min, base);
     }
-    return this.axisLength * (value - min) / this.bounds.range;      
+    return this.axisLength * (value - min) / this.bounds.range;
   }
 
   Chartist.AutoScaleAxis = Chartist.Axis.extend({

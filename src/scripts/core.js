@@ -610,7 +610,7 @@ var Chartist = {
   };
 
   /**
-   * Gets a value from a dimension `value.x` or `value.y` while returning value directly if it's a valid numeric value. If the value is not numeric and it's falsey this function will return undefined.
+   * Gets a value from a dimension `value.x` or `value.y` while returning value directly if it's a valid numeric value. If the value is not numeric and it's falsey this function will return 0.
    *
    * @param value
    * @param dimension
@@ -623,6 +623,7 @@ var Chartist = {
       return value[dimension || 'y'] || 0;
     } else {
       return 0;
+
     }
   };
 
@@ -730,7 +731,7 @@ var Chartist = {
     // step must not be less than EPSILON to create values that can be represented as floating number.
     var EPSILON = 2.221E-16;
     bounds.step = Math.max(bounds.step, EPSILON);
-    
+
     // Narrow min and max based on new step
     newMin = bounds.min;
     newMax = bounds.max;
@@ -745,8 +746,8 @@ var Chartist = {
     bounds.range = bounds.max - bounds.min;
 
     var values = [];
-    for (i = bounds.min; i <= bounds.max; i += bounds.step) {      
-      var value = Chartist.roundWithPrecision(i);      
+    for (i = bounds.min; i <= bounds.max; i += bounds.step) {
+      var value = Chartist.roundWithPrecision(i);
       if (value !== values[values.length - 1]) {
         values.push(i);
       }
