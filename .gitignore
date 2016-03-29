@@ -12,3 +12,7 @@ site/bower_components/
 
 # debug
 npm-debug.log
+
+# IDE (JetBrains/WebStorm)
+.idea/
+
