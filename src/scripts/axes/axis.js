@@ -28,7 +28,7 @@
     this.axisLength = chartRect[units.rectEnd] - chartRect[units.rectStart];
     this.gridOffset = chartRect[units.rectOffset];
     this.ticks = ticks;
-    this.scalingFunction = options.scalingFunction || Chartist.noop;
+    this.scalingTransformation = options ? options.scalingTransformation : Chartist.Transformations.linear;
     this.options = options;
   }
 

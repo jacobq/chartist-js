@@ -489,26 +489,53 @@ var Chartist = {
   };
 
   /**
-   * Takes a base value and returns a function that computes the
-   * logarithm of a number with respect to the given base.
-   * This is useful in charts using logarithmic scaling.
-   *
+   * Collection of transformation functions (e.g. for logarithmic scaling)
+   * Each property's value should be an object containing the transformation
+   * function `f` and its inverse `inv` or a function that returns that object.
+   * @namespace Chartist.Tranformations
    * @memberof Chartist.Core
-   * @param {Number} base Positive, real number not equal to 0 or 1 to be used as base
-   * @return {Function} A function that takes a value and returns its logarithm with respect to the previously specified base
    */
-  Chartist.logBase = function(base) {
-    if (typeof base !== "number" || base <= 0 || base === 1)
-      throw Error("The base of the logarithm must be a positive real number not equal to 0 or 1. (got " + base + ")");
+  Chartist.Transformations = {
+    /**
+     * Linear / identity / noop function
+     *
+     * @memberof Chartist.Tranformations
+     * @return {Object} transform f and its inverse are both the indentity function in this case
+     */
+    linear: {
+      f: Chartist.noop,
+      inv: Chartist.noop
+    },
+    /**
+     * Takes a base value and returns a function that computes the
+     * logarithm of a number with respect to the given base.
+     * This is useful in charts using logarithmic scaling.
+     *
+     * @memberof Chartist.Tranformations
+     * @param {Number} base Positive, real number not equal to 0 or 1 to be used as base
+     * @return {Object} transform An object containing the transformation function and its inverse:
+     *   f: A function that takes a value and returns its logarithm
+     *   with respect to the previously specified base
+     *   inv: A function that raises the specified base to the given power/exponent.
+     */
+    logBase: function (base) {
+      if (typeof base !== 'number' || base <= 0 || base === 1) {
+        throw Error('The base of the logarithm must be a positive real number not equal to 0 or 1. (got ' + base + ')');
+      }
 
-    return function(value) {
-      if (typeof value !== "number" || value <= 0)
-        throw Error("The input to the logarithm function must be a positive real number not equal to 0. (got " + value + ")");
-
-      return (Math.log(value) / Math.log(base));
+      return {
+        f: function (value) {
+          if (typeof value !== 'number' || value <= 0) {
+            throw Error('The input to the logarithm function must be a positive real number not equal to 0. (got ' + value + ')');
+          }
+          return Math.log(value) / Math.log(base);
+        },
+        inv: function (value) {
+          return Math.pow(base, value);
+        }
+      };
     }
   };
-
 
   /**
    * Get the height of the area in the chart for the data series

@@ -12,11 +12,20 @@ new Chartist.Line('.ct-chart', {
   axisX: {
     type: Chartist.AutoScaleAxis,
     onlyInteger: true,
-    scalingFunction: Chartist.logBase(2)
+    //scalingTransformation: Chartist.Transformations.logBase(2)
+    // Rather than the built-in linear and logarithmic transformations, you can also add your own:
+    scalingTransformation: {
+      f: function(value) {
+        return Math.sqrt(value);
+      },
+      inv: function(value) {
+        return value * value;
+      }
+    }
   },
   axisY: {
     type: Chartist.AutoScaleAxis,
     onlyInteger: false,
-    scalingFunction: Chartist.logBase(10)
+    scalingTransformation: Chartist.Transformations.logBase(10)
   }
 });

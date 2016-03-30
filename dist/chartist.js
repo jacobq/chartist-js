@@ -376,7 +376,7 @@ var Chartist = {
         labelCount = normalized.length;
       }
 
-      // Setting labels to an array with emptry strings using our labelCount estimated above
+      // Setting labels to an array with empty strings using our labelCount estimated above
       data.labels = Chartist.times(labelCount).map(function() {
         return '';
       });
@@ -508,6 +508,59 @@ var Chartist = {
    */
   Chartist.projectLength = function (axisLength, length, bounds) {
     return length / bounds.range * axisLength;
+  };
+
+  /**
+   * Collection of transformation functions (e.g. for logarithmic scaling)
+   * Each property's value should be an object containing the transformation
+   * function `f` and its inverse `inv` or a function that returns that object.
+   * @namespace Chartist.Tranformations
+   * @memberof Chartist.Core
+   */
+  Chartist.Transformations = {
+    /**
+     * Linear / identity / noop function
+     *
+     * @memberof Chartist.Tranformations
+     * @return {Object} transform f and its inverse are both the indentity function in this case
+     */
+    linear: {
+      f: Chartist.noop,
+      inv: Chartist.noop,
+      inDomain: function() { return true; }
+    },
+    /**
+     * Takes a base value and returns a function that computes the
+     * logarithm of a number with respect to the given base.
+     * This is useful in charts using logarithmic scaling.
+     *
+     * @memberof Chartist.Tranformations
+     * @param {Number} base Positive, real number not equal to 0 or 1 to be used as base
+     * @return {Object} transform An object containing the transformation function and its inverse:
+     *   f: A function that takes a value and returns its logarithm
+     *   with respect to the previously specified base
+     *   inv: A function that raises the specified base to the given power/exponent.
+     */
+    logBase: function(base) {
+      if (typeof base !== 'number' || base <= 0 || base === 1) {
+        throw Error('The base of the logarithm must be a positive real number not equal to 0 or 1. (got ' + base + ')');
+      }
+
+      return {
+        f: function(value) {
+          if (typeof value !== 'number' || value <= 0) {
+            throw Error('The input to the logarithm function must be a positive real number not equal to 0. (got ' + value + ')');
+          }
+          return Math.log(value) / Math.log(base);
+        },
+        inv: function(value) {
+          return Math.pow(base, value);
+        },
+        inDomain: function(x) {
+          return x > 0;
+        }
+      };
+    }
   };
 
   /**
@@ -694,7 +747,7 @@ var Chartist = {
    * @param {Number} axisLength The length of the Axis used for
    * @param {Object} highLow An object containing a high and low property indicating the value range of the chart.
    * @param {Number} scaleMinSpace The minimum projected length a step should result in
-   * @param {Boolean} onlyInteger
+   * @param {Boolean} onlyInteger When true, only integer step sizes will be used
    * @return {Object} All the values to set the bounds of the chart
    */
   Chartist.getBounds = function (axisLength, highLow, scaleMinSpace, onlyInteger) {
@@ -2738,6 +2791,7 @@ var Chartist = {
     this.axisLength = chartRect[units.rectEnd] - chartRect[units.rectStart];
     this.gridOffset = chartRect[units.rectOffset];
     this.ticks = ticks;
+    this.scalingTransformation = options ? options.scalingTransformation : Chartist.Transformations.linear;
     this.options = options;
   }
 
@@ -2855,7 +2909,6 @@ var Chartist = {
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
     this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
-    console.log(this);
 /*
     var scale = options.scale || 'linear';
     var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
@@ -2877,30 +2930,41 @@ var Chartist = {
       }
     }
 */
+    // FIXME
+    //if (this.bounds.min === 0)
+    //  this.bounds.min = 1;
+
+
 
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
       this.bounds.values,
       options);
+    console.log(axisUnit, this, chartRect, options);
   }
 
-  function baseLog(val, base) {
-    return Math.log(val) / Math.log(base);
-  }
-
+  // Since the scale may not be linear we transform min & max, recompute the (transformed) range,
+  // apply the transformation to the value itself then return the corresponding position on the axis.
   function projectValue(value) {
     value = +Chartist.getMultiValue(value, this.units.pos);
-    var max = this.bounds.max;
-    var min = this.bounds.min;
-/*
-    if (this.scale.type === 'log') {
-      var base = this.scale.base;
-      return this.axisLength / baseLog(max / min, base) * baseLog(value / min, base);
+    var transform, min, max, range, value_transformed;
+    try {
+      transform = this.scalingTransformation.f;
+      min = transform(this.bounds.min);
+      max = transform(this.bounds.max);
+      value_transformed = transform(value);
+    } catch(e) {
+      // TODO: Signal error appropriately
+      console.warn('projectValue encountered an error while scaling:', e, this.bounds.min, this.bounds.max);
+
+      // Fall-back to linear scaling / pass-thru
+      min = this.bounds.min;
+      max = this.bounds.max;
+      value_transformed = value;
     }
-*/
-    var result = this.axisLength * (value - min) / this.bounds.range;
-    //console.log("projectValue: result = ", result);
+    range = max - min;
+    var result = this.axisLength * (value_transformed - min) / range;
     return result;
   }
 

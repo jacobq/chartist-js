@@ -28,7 +28,32 @@
   function AutoScaleAxis(axisUnit, data, chartRect, options) {
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
-    this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
+
+    // Apply transformation to data before sending to getBounds so that it doesn't have to know about it
+    // yet can still generate nice scales by default.
+    options.scalingTransformation = options.scalingTransformation || {};
+    options.scalingTransformation.f = options.scalingTransformation.f || Chartist.Transformations.linear.f;
+    options.scalingTransformation.inv = options.scalingTransformation.inv || Chartist.Transformations.linear.inv;
+    var f = options.scalingTransformation.f;
+    var inv = options.scalingTransformation.inv;
+    var transformedHighLow = {
+      low: f(highLow.low),
+      high: f(highLow.high)
+    };
+
+    var transformedBounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], transformedHighLow, options.scaleMinSpace || 20, options.onlyInteger);
+    this.bounds = {
+      high: inv(transformedBounds.high),
+      low: inv(transformedBounds.low),
+      max: inv(transformedBounds.max),
+      min: inv(transformedBounds.min),
+      oom: transformedBounds.oom,
+      range: inv(transformedBounds.range),
+      step: inv(transformedBounds.step),
+      valueRange: inv(transformedBounds.valueRange),
+      values: transformedBounds.values.map(inv)
+    };
+    console.log(this.bounds);
 /*
     var scale = options.scale || 'linear';
     var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
@@ -51,10 +76,10 @@
     }
 */
     // FIXME
-    if (this.bounds.min === 0)
-      this.bounds.min = 1;
+    //if (this.bounds.min === 0)
+    //  this.bounds.min = 1;
 
-    
+
 
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
@@ -68,15 +93,15 @@
   // apply the transformation to the value itself then return the corresponding position on the axis.
   function projectValue(value) {
     value = +Chartist.getMultiValue(value, this.units.pos);
-    var min, max, range, value_transformed;
+    var transform, min, max, range, value_transformed;
     try {
-      min = this.scalingFunction(this.bounds.min);
-      max = this.scalingFunction(this.bounds.max);
-      value_transformed = this.scalingFunction(value);
-      console.log("debug", min, max, value_transformed);
+      transform = this.scalingTransformation.f;
+      min = transform(this.bounds.min);
+      max = transform(this.bounds.max);
+      value_transformed = transform(value);
     } catch(e) {
       // TODO: Signal error appropriately
-      console.warn("projectValue encountered an error while scaling:", e, this.bounds.min, this.bounds.max);
+      console.warn('projectValue encountered an error while scaling:', e, this.bounds.min, this.bounds.max);
 
       // Fall-back to linear scaling / pass-thru
       min = this.bounds.min;
@@ -85,7 +110,6 @@
     }
     range = max - min;
     var result = this.axisLength * (value_transformed - min) / range;
-    console.log("projectValue: result = ", result);
     return result;
   }
 
