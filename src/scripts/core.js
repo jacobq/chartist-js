@@ -354,7 +354,7 @@ var Chartist = {
         labelCount = normalized.length;
       }
 
-      // Setting labels to an array with emptry strings using our labelCount estimated above
+      // Setting labels to an array with empty strings using our labelCount estimated above
       data.labels = Chartist.times(labelCount).map(function() {
         return '';
       });
@@ -487,6 +487,28 @@ var Chartist = {
   Chartist.projectLength = function (axisLength, length, bounds) {
     return length / bounds.range * axisLength;
   };
+
+  /**
+   * Takes a base value and returns a function that computes the
+   * logarithm of a number with respect to the given base.
+   * This is useful in charts using logarithmic scaling.
+   *
+   * @memberof Chartist.Core
+   * @param {Number} base Positive, real number not equal to 0 or 1 to be used as base
+   * @return {Function} A function that takes a value and returns its logarithm with respect to the previously specified base
+   */
+  Chartist.logBase = function(base) {
+    if (typeof base !== "number" || base <= 0 || base === 1)
+      throw Error("The base of the logarithm must be a positive real number not equal to 0 or 1. (got " + base + ")");
+
+    return function(value) {
+      if (typeof value !== "number" || value <= 0)
+        throw Error("The input to the logarithm function must be a positive real number not equal to 0. (got " + value + ")");
+
+      return (Math.log(value) / Math.log(base));
+    }
+  };
+
 
   /**
    * Get the height of the area in the chart for the data series
@@ -672,7 +694,7 @@ var Chartist = {
    * @param {Number} axisLength The length of the Axis used for
    * @param {Object} highLow An object containing a high and low property indicating the value range of the chart.
    * @param {Number} scaleMinSpace The minimum projected length a step should result in
-   * @param {Boolean} onlyInteger
+   * @param {Boolean} onlyInteger When true, only integer step sizes will be used
    * @return {Object} All the values to set the bounds of the chart
    */
   Chartist.getBounds = function (axisLength, highLow, scaleMinSpace, onlyInteger) {

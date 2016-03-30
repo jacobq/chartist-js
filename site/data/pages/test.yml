@@ -1,0 +1,12 @@
+sections:
+  - title: Test page
+    level: 3
+    items:
+      - type: live-example
+        data:
+          title: Logarithmic scaled axes
+          level: 4
+          id: example-axis-log
+          classes: ct-golden-section
+          intro: >
+                   Use the <code>scale</code> option to change each axis to logarithmic scale.

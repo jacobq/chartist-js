@@ -29,7 +29,7 @@
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
     this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
-
+/*
     var scale = options.scale || 'linear';
     var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
     this.scale = {
@@ -49,27 +49,44 @@
         this.bounds.values.push(Math.pow(base, decade));
       }
     }
+*/
+    // FIXME
+    if (this.bounds.min === 0)
+      this.bounds.min = 1;
+
+    
 
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
       this.bounds.values,
       options);
+    console.log(axisUnit, this, chartRect, options);
   }
 
-  function baseLog(val, base) {
-    return Math.log(val) / Math.log(base);
-  }
-
+  // Since the scale may not be linear we transform min & max, recompute the (transformed) range,
+  // apply the transformation to the value itself then return the corresponding position on the axis.
   function projectValue(value) {
     value = +Chartist.getMultiValue(value, this.units.pos);
-    var max = this.bounds.max;
-    var min = this.bounds.min;
-    if (this.scale.type === 'log') {
-      var base = this.scale.base;
-      return this.axisLength / baseLog(max / min, base) * baseLog(value / min, base);
+    var min, max, range, value_transformed;
+    try {
+      min = this.scalingFunction(this.bounds.min);
+      max = this.scalingFunction(this.bounds.max);
+      value_transformed = this.scalingFunction(value);
+      console.log("debug", min, max, value_transformed);
+    } catch(e) {
+      // TODO: Signal error appropriately
+      console.warn("projectValue encountered an error while scaling:", e, this.bounds.min, this.bounds.max);
+
+      // Fall-back to linear scaling / pass-thru
+      min = this.bounds.min;
+      max = this.bounds.max;
+      value_transformed = value;
     }
-    return this.axisLength * (value - min) / this.bounds.range;
+    range = max - min;
+    var result = this.axisLength * (value_transformed - min) / range;
+    console.log("projectValue: result = ", result);
+    return result;
   }
 
   Chartist.AutoScaleAxis = Chartist.Axis.extend({
