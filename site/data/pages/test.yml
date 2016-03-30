@@ -4,9 +4,15 @@ sections:
     items:
       - type: live-example
         data:
-          title: Logarithmic scaled axes
+          title: Axis scale transformations
           level: 4
           id: example-axis-log
           classes: ct-golden-section
           intro: >
-                   Use the <code>scale</code> option to change each axis to logarithmic scale.
+                  By supplying the
+                  <code>scalingTransformation</code>
+                  option you can use logarithmic or (the default) linear scaling.
+                  You can also provide your own transformation function and inverse for custom scale transformations.
+                  For logarithmic scaling set
+                  <code>options.scalingTransformation = Chartist.Transformations.logBase(b)</code>
+                  where <code>b</code> is replaced by the number corresponding to the base to be used.

@@ -526,8 +526,7 @@ var Chartist = {
      */
     linear: {
       f: Chartist.noop,
-      inv: Chartist.noop,
-      inDomain: function() { return true; }
+      inv: Chartist.noop
     },
     /**
      * Takes a base value and returns a function that computes the
@@ -541,23 +540,20 @@ var Chartist = {
      *   with respect to the previously specified base
      *   inv: A function that raises the specified base to the given power/exponent.
      */
-    logBase: function(base) {
+    logBase: function (base) {
       if (typeof base !== 'number' || base <= 0 || base === 1) {
         throw Error('The base of the logarithm must be a positive real number not equal to 0 or 1. (got ' + base + ')');
       }
 
       return {
-        f: function(value) {
+        f: function (value) {
           if (typeof value !== 'number' || value <= 0) {
             throw Error('The input to the logarithm function must be a positive real number not equal to 0. (got ' + value + ')');
           }
           return Math.log(value) / Math.log(base);
         },
-        inv: function(value) {
+        inv: function (value) {
           return Math.pow(base, value);
-        },
-        inDomain: function(x) {
-          return x > 0;
         }
       };
     }
@@ -2908,40 +2904,34 @@ var Chartist = {
   function AutoScaleAxis(axisUnit, data, chartRect, options) {
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
-    this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
-/*
-    var scale = options.scale || 'linear';
-    var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
-    this.scale = {
-      type : match[1],
-      base : Number(match[2]) || 10
+
+    // Apply transformation to data before sending to getBounds so that that function doesn't have to know/care
+    // that a scaling transformation is being applied, yet we can still usually generate nice scales by default.
+    options.scalingTransformation = options.scalingTransformation || {};
+    options.scalingTransformation.f = options.scalingTransformation.f || Chartist.Transformations.linear.f;
+    options.scalingTransformation.inv = options.scalingTransformation.inv || Chartist.Transformations.linear.inv;
+    var f = options.scalingTransformation.f;
+    var inv = options.scalingTransformation.inv;
+    var transformedHighLow = {
+      low: f(highLow.low),
+      high: f(highLow.high)
     };
-    if (this.scale.type === 'log') {
-      if (highLow.low * highLow.high <= 0)
-        throw new Error('Negative or zero values are not supported on logarithmic axes.');
-      var base = this.scale.base;
-      var minDecade = Math.floor(baseLog(this.bounds.low, base));
-      var maxDecade = Math.ceil(baseLog(this.bounds.high, base));
-      this.bounds.min = Math.pow(base, minDecade);
-      this.bounds.max = Math.pow(base, maxDecade);
-      this.bounds.values = [];
-      for(var decade = minDecade; decade <= maxDecade; ++decade) {
-        this.bounds.values.push(Math.pow(base, decade));
+    var transformedBounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], transformedHighLow, options.scaleMinSpace || 20, options.onlyInteger);
+    // Invert bounds properties that correspond to data values (e.g. not order of magnitude, etc.)
+    this.bounds = Object.keys(transformedBounds).reduce(function(obj, name) {
+      var value = transformedBounds[name];
+      if (['high', 'low', 'max', 'min', 'range', 'step', 'valueRange', 'values'].indexOf !== -1) {
+        value = (value instanceof Array) ?  value.map(inv) : inv(value);
       }
-    }
-*/
-    // FIXME
-    //if (this.bounds.min === 0)
-    //  this.bounds.min = 1;
-
-
+      obj[name] = value;
+      return obj;
+    }, {});
 
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
       this.bounds.values,
       options);
-    console.log(axisUnit, this, chartRect, options);
   }
 
   // Since the scale may not be linear we transform min & max, recompute the (transformed) range,

@@ -29,8 +29,8 @@
     // Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
     var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
 
-    // Apply transformation to data before sending to getBounds so that it doesn't have to know about it
-    // yet can still generate nice scales by default.
+    // Apply transformation to data before sending to getBounds so that that function doesn't have to know/care
+    // that a scaling transformation is being applied, yet we can still usually generate nice scales by default.
     options.scalingTransformation = options.scalingTransformation || {};
     options.scalingTransformation.f = options.scalingTransformation.f || Chartist.Transformations.linear.f;
     options.scalingTransformation.inv = options.scalingTransformation.inv || Chartist.Transformations.linear.inv;
@@ -40,53 +40,22 @@
       low: f(highLow.low),
       high: f(highLow.high)
     };
-
     var transformedBounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], transformedHighLow, options.scaleMinSpace || 20, options.onlyInteger);
-    this.bounds = {
-      high: inv(transformedBounds.high),
-      low: inv(transformedBounds.low),
-      max: inv(transformedBounds.max),
-      min: inv(transformedBounds.min),
-      oom: transformedBounds.oom,
-      range: inv(transformedBounds.range),
-      step: inv(transformedBounds.step),
-      valueRange: inv(transformedBounds.valueRange),
-      values: transformedBounds.values.map(inv)
-    };
-    console.log(this.bounds);
-/*
-    var scale = options.scale || 'linear';
-    var match = scale.match(/^([a-z]+)(\d+\.?\d*)?$/);
-    this.scale = {
-      type : match[1],
-      base : Number(match[2]) || 10
-    };
-    if (this.scale.type === 'log') {
-      if (highLow.low * highLow.high <= 0)
-        throw new Error('Negative or zero values are not supported on logarithmic axes.');
-      var base = this.scale.base;
-      var minDecade = Math.floor(baseLog(this.bounds.low, base));
-      var maxDecade = Math.ceil(baseLog(this.bounds.high, base));
-      this.bounds.min = Math.pow(base, minDecade);
-      this.bounds.max = Math.pow(base, maxDecade);
-      this.bounds.values = [];
-      for(var decade = minDecade; decade <= maxDecade; ++decade) {
-        this.bounds.values.push(Math.pow(base, decade));
+    // Invert bounds properties that correspond to data values (e.g. not order of magnitude, etc.)
+    this.bounds = Object.keys(transformedBounds).reduce(function(obj, name) {
+      var value = transformedBounds[name];
+      if (['high', 'low', 'max', 'min', 'range', 'step', 'valueRange', 'values'].indexOf !== -1) {
+        value = (value instanceof Array) ?  value.map(inv) : inv(value);
       }
-    }
-*/
-    // FIXME
-    //if (this.bounds.min === 0)
-    //  this.bounds.min = 1;
-
-
+      obj[name] = value;
+      return obj;
+    }, {});
 
     Chartist.AutoScaleAxis.super.constructor.call(this,
       axisUnit,
       chartRect,
       this.bounds.values,
       options);
-    console.log(axisUnit, this, chartRect, options);
   }
 
   // Since the scale may not be linear we transform min & max, recompute the (transformed) range,

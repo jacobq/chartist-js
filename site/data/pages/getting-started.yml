@@ -705,12 +705,20 @@ sections:
                               data series is that we are specifying 2-dimensional values directly.
                   - type: live-example
                     data:
-                      title: Logarithmic scaled axes
+                      title: Axis scale transformations
                       level: 6
                       id: example-axis-log
                       classes: ct-golden-section
                       intro: >
-                               Use the <code>scale</code> option to change each axis to logarithmic scale.
+                              For logarithmic scaling in base 10 use
+                              <code>options.scalingTransformation = Chartist.Transformations.logBase(10)</code>
+                  - type: text
+                    data:
+                      text: >
+                              By supplying the
+                              <code>scalingTransformation</code>
+                              option you can use logarithmic or (the default) linear scaling.
+                              You can also provide your own transformation function and inverse for custom scale transformations.
             - type: sub-section
               data:
                 title: Fixed stuff can be sweet too!
